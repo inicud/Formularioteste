@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulário Lucas - Interactive App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #000;
+            color: #fff;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            overflow: hidden;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        input:focus {
+            outline: none;
+            border-bottom: 2px solid #3b82f6;
+        }
+        .progress-bar {
+            transition: width 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center h-screen p-4">
+
+    <!-- Progress Tracker -->
+    <div class="fixed top-0 left-0 w-full h-1 bg-zinc-800">
+        <div id="progressBar" class="progress-bar h-full bg-blue-600" style="width: 0%"></div>
+    </div>
+
+    <div id="app" class="w-full max-w-xl">
+        <!-- Form Step Content -->
+        <div id="stepContainer" class="fade-in">
+            <p id="stepLabel" class="text-zinc-500 text-sm uppercase tracking-widest mb-2 font-bold"></p>
+            <h2 id="stepQuestion" class="text-3xl md:text-4xl font-light mb-8"></h2>
+            
+            <div class="relative">
+                <input 
+                    type="text" 
+                    id="currentInput" 
+                    class="w-full bg-transparent border-b-2 border-zinc-700 py-4 text-2xl md:text-3xl font-medium placeholder-zinc-800 transition-all"
+                    placeholder="Digite aqui..."
+                    autocomplete="off"
+                >
+            </div>
+
+            <div class="mt-12 flex items-center justify-between">
+                <button id="prevBtn" class="text-zinc-500 hover:text-white transition-colors disabled:opacity-0">
+                    &larr; Voltar
+                </button>
+                <div class="flex flex-col items-end">
+                    <button id="nextBtn" class="bg-white text-black px-8 py-3 rounded-full font-bold hover:bg-zinc-200 transition-all active:scale-95">
+                        Próximo
+                    </button>
+                    <span class="text-zinc-600 text-xs mt-2 italic">Pressione ENTER para continuar</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Success Screen -->
+        <div id="successScreen" class="hidden text-center fade-in">
+            <div class="mb-6 inline-block p-4 rounded-full bg-green-900/20 text-green-500">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+            </div>
+            <h2 class="text-4xl font-bold mb-4">Concluído!</h2>
+            <p class="text-zinc-400 mb-8">Seu arquivo JSON foi gerado com sucesso.</p>
+            <button onclick="window.location.reload()" class="border border-zinc-700 px-6 py-2 rounded-lg hover:bg-zinc-900 transition-all">
+                Reiniciar Formulário
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const fields = [
+            { id: "nome", label: "Nome", question: "Qual o seu nome completo?" },
+            { id: "nacionalidade", label: "Nacionalidade", question: "Qual sua nacionalidade?" },
+            { id: "estado_civil", label: "Estado Civil", question: "Qual seu estado civil?" },
+            { id: "profissao", label: "Profissão", question: "Qual sua profissão atual?" },
+            { id: "cpf", label: "CPF", question: "Qual o seu CPF?" },
+            { id: "identidade", label: "Identidade", question: "Qual o seu RG / Identidade?" },
+            { id: "rua", label: "Rua", question: "Qual o nome da rua?" },
+            { id: "numero", label: "Número", question: "Qual o número da residência?" },
+            { id: "complemento", label: "Complemento", question: "Algum complemento?" },
+            { id: "bairro", label: "Bairro", question: "Qual o bairro?" },
+            { id: "cidade", label: "Cidade", question: "Em qual cidade você mora?" },
+            { id: "uf", label: "UF", question: "Qual o Estado (UF)?" },
+            { id: "cep", label: "CEP", question: "Qual o seu CEP?" }
+        ];
+
+        let currentStep = 0;
+        const formData = {};
+
+        const stepLabel = document.getElementById('stepLabel');
+        const stepQuestion = document.getElementById('stepQuestion');
+        const currentInput = document.getElementById('currentInput');
+        const nextBtn = document.getElementById('nextBtn');
+        const prevBtn = document.getElementById('prevBtn');
+        const progressBar = document.getElementById('progressBar');
+        const stepContainer = document.getElementById('stepContainer');
+        const successScreen = document.getElementById('successScreen');
+
+        function updateUI() {
+            const field = fields[currentStep];
+            stepLabel.textContent = `Campo ${currentStep + 1} de ${fields.length}`;
+            stepQuestion.textContent = field.question;
+            currentInput.value = formData[field.id] || "";
+            currentInput.focus();
+            
+            // Progress Bar
+            const progress = ((currentStep) / (fields.length)) * 100;
+            progressBar.style.width = `${progress}%`;
+
+            // Buttons
+            prevBtn.disabled = currentStep === 0;
+            nextBtn.textContent = currentStep === fields.length - 1 ? "Finalizar" : "Próximo";
+
+            // Animation
+            stepContainer.classList.remove('fade-in');
+            void stepContainer.offsetWidth; // Trigger reflow
+            stepContainer.classList.add('fade-in');
+        }
+
+        function handleNext() {
+            const field = fields[currentStep];
+            formData[field.id] = currentInput.value;
+
+            if (currentStep < fields.length - 1) {
+                currentStep++;
+                updateUI();
+            } else {
+                saveData();
+            }
+        }
+
+        function handlePrev() {
+            if (currentStep > 0) {
+                currentStep--;
+                updateUI();
+            }
+        }
+
+        function saveData() {
+            // Final Progress
+            progressBar.style.width = "100%";
+            
+            // Create JSON
+            const jsonString = JSON.stringify(formData, null, 4);
+            const blob = new Blob([jsonString], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            
+            // Create Download Link
+            const link = document.createElement("a");
+            link.href = url;
+            // Note: Navegadores salvam na pasta de Downloads por padrão
+            link.download = "dados_formulario.json";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // Show Success
+            stepContainer.classList.add('hidden');
+            successScreen.classList.remove('hidden');
+        }
+
+        // Event Listeners
+        nextBtn.addEventListener('click', handleNext);
+        prevBtn.addEventListener('click', handlePrev);
+        
+        currentInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') handleNext();
+        });
+
+        // Initialize
+        updateUI();
+    </script>
+</body>
+</html>
